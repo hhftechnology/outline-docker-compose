@@ -1,0 +1,62 @@
+version: "3"
+services:
+
+  outline:
+    image: docker.io/outlinewiki/outline
+    env_file: ./docker.env
+    ports:
+      - "3000:3000"
+    volumes:
+      - storage-data:/data/outline_data
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - keycloak_stack
+
+  redis:
+    image: docker.io/redis
+    env_file: ./docker.env
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis.conf:/redis.conf
+    command: ["redis-server", "/redis.conf"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 30s
+      retries: 3
+    networks:
+      - keycloak_stack
+
+
+
+  postgres:
+    image: docker.io/postgres
+    env_file: ./docker.env
+    user: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'pass'
+      POSTGRES_DB: 'outline'
+    networks:
+      - keycloak_stack
+
+
+volumes:
+  storage-data:
+  database-data:
+
+networks:
+  keycloak_stack:
+    external: true

@@ -1,0 +1,45 @@
+version: '3'
+
+volumes:
+  postgres_data:
+
+services:
+  postgresk:
+      image: docker.io/postgres
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      ports:
+        - 5433:5432
+      environment:
+        POSTGRES_DB: keycloak
+        POSTGRES_USER: keycloak
+        POSTGRES_PASSWORD: password
+      networks:
+      - stack
+
+
+  keycloak:
+      image: quay.io/keycloak/keycloak:20.0.2
+      env_file: ./.env
+      ports:
+        - "8080:8080"
+      expose: 
+        - "8080"
+      command: start-dev --hostname-strict=false
+      environment:
+        KC_DB: postgres
+        KC_DB_URL: jdbc:postgresql://postgresk:5432/keycloak
+        KC_DB_PASSWORD: password
+        KC_DB_USERNAME: keycloak
+        KC_DB_SCHEMA: public
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
+        # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
+        #JDBC_PARAMS: "ssl=true"
+      networks:
+        - stack
+      depends_on:
+        - postgresk
+
+networks:
+  stack:
